@@ -32,7 +32,7 @@ __global__ void ComputeAdaptiveLrOnDeviceAfterTypeCheck(
   }
 }
 
-#define CHECK_CUDA(x) AT_ASSERTM(x.type().is_cuda(), #x " must be a CUDA tensor")
+#define CHECK_CUDA(x) AT_ASSERTM(x.device().is_cuda(), #x " must be a CUDA tensor")
 
 void ComputeAdaptiveLrOnDevice(
     torch::Tensor param_norm,
@@ -46,15 +46,15 @@ void ComputeAdaptiveLrOnDevice(
   CHECK_CUDA(out);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      param_norm.type(),
+      param_norm.scalar_type(),
       "compute_adaptive_lr_cuda",
       ([&] {
          ComputeAdaptiveLrOnDeviceAfterTypeCheck<scalar_t><<<1, 1>>>(
-             *param_norm.data<scalar_t>(),
-             *grad_norm.data<scalar_t>(),
+             *param_norm.data_ptr<scalar_t>(),
+             *grad_norm.data_ptr<scalar_t>(),
              weight_decay,
              eps,
              trust_coef,
-             out.data<scalar_t>());
+             out.data_ptr<scalar_t>());
        }));
 }

@@ -40,7 +40,7 @@ void ComputeAdaptiveLrOnDevice(
     torch::Tensor out);
 
 #define CHECK_CONTIGUOUS(x) AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
-#define CHECK_CPU(x) AT_ASSERTM(!x.type().is_cuda(), #x " must be a CPU tensor")
+#define CHECK_CPU(x) AT_ASSERTM(!x.device().is_cuda(), #x " must be a CPU tensor")
 
 torch::Tensor ComputeAdaptiveLr(
     torch::Tensor param_norm,
@@ -53,7 +53,7 @@ torch::Tensor ComputeAdaptiveLr(
   CHECK_CONTIGUOUS(grad_norm);
   CHECK_CONTIGUOUS(out);
 
-  if (param_norm.type().is_cuda() && grad_norm.type().is_cuda()) {
+  if (param_norm.device().is_cuda() && grad_norm.device().is_cuda()) {
     ComputeAdaptiveLrOnDevice(
         param_norm,
         grad_norm,
@@ -67,16 +67,16 @@ torch::Tensor ComputeAdaptiveLr(
     CHECK_CPU(out);
 
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-        param_norm.type(),
+        param_norm.scalar_type(),
         "compute_adaptive_lr_cpu",
         ([&] {
            ComputeAdaptiveLrAfterTypeCheck<scalar_t>(
-               *param_norm.data<scalar_t>(),
-               *grad_norm.data<scalar_t>(),
+               *param_norm.data_ptr<scalar_t>(),
+               *grad_norm.data_ptr<scalar_t>(),
                weight_decay,
                eps,
                trust_coef,
-               out.data<scalar_t>());
+               out.data_ptr<scalar_t>());
          }));
   }
 
